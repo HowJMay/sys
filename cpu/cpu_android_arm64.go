@@ -1,10 +1,10 @@
-// Copyright 2018 The Go Authors. All rights reserved.
+// Copyright 2021 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 // +build arm64
 // +build linux
-// +build !android
+// +build android
 
 package cpu
 
@@ -43,7 +43,9 @@ func osInit() {
 		return
 	}
 
-	// HWCAP feature bits
+	// HWCap was populated by the runtime from the auxiliary vector.
+	// Use HWCap information since reading aarch64 system registers
+	// is not supported in user space on older linux kernels.
 	ARM64.HasFP = isSet(hwCap, hwcap_FP)
 	ARM64.HasASIMD = isSet(hwCap, hwcap_ASIMD)
 	ARM64.HasEVTSTRM = isSet(hwCap, hwcap_EVTSTRM)
@@ -52,10 +54,8 @@ func osInit() {
 	ARM64.HasSHA1 = isSet(hwCap, hwcap_SHA1)
 	ARM64.HasSHA2 = isSet(hwCap, hwcap_SHA2)
 	ARM64.HasCRC32 = isSet(hwCap, hwcap_CRC32)
-	ARM64.HasATOMICS = isSet(hwCap, hwcap_ATOMICS)
 	ARM64.HasFPHP = isSet(hwCap, hwcap_FPHP)
 	ARM64.HasASIMDHP = isSet(hwCap, hwcap_ASIMDHP)
-	ARM64.HasCPUID = isSet(hwCap, hwcap_CPUID)
 	ARM64.HasASIMDRDM = isSet(hwCap, hwcap_ASIMDRDM)
 	ARM64.HasJSCVT = isSet(hwCap, hwcap_JSCVT)
 	ARM64.HasFCMA = isSet(hwCap, hwcap_FCMA)
@@ -68,6 +68,30 @@ func osInit() {
 	ARM64.HasSHA512 = isSet(hwCap, hwcap_SHA512)
 	ARM64.HasSVE = isSet(hwCap, hwcap_SVE)
 	ARM64.HasASIMDFHM = isSet(hwCap, hwcap_ASIMDFHM)
+
+	// The Samsung S9+ kernel reports support for atomics, but not all cores
+	// actually support them, resulting in SIGILL. See issue #28431.
+	// TODO(elias.naur): Only disable the optimization on bad chipsets on android.
+	ARM64.HasATOMICS = false
+
+	// Check to see if executing on a NeoverseN1 and in order to do that,
+	// check the AUXV for the CPUID bit. The getMIDR function executes an
+	// instruction which would normally be an illegal instruction, but it's
+	// trapped by the kernel, the value sanitized and then returned. Without
+	// the CPUID bit the kernel will not trap the instruction and the process
+	// will be terminated with SIGILL.
+	if ARM64.HasCPUID {
+		midr := getMIDR()
+		part_num := uint16((midr >> 4) & 0xfff)
+		implementor := byte((midr >> 24) & 0xff)
+
+		if implementor == 'A' && part_num == 0xd0c {
+			ARM64.IsNeoverseN1 = true
+		}
+		if implementor == 'A' && part_num == 0xd40 {
+			ARM64.IsZeus = true
+		}
+	}
 }
 
 func isSet(hwc uint, value uint) bool {

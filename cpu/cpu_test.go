@@ -5,6 +5,7 @@
 package cpu_test
 
 import (
+	"fmt"
 	"runtime"
 	"testing"
 
@@ -42,7 +43,7 @@ func TestAVX512HasAVX2AndAVX(t *testing.T) {
 }
 
 func TestARM64minimalFeatures(t *testing.T) {
-	if runtime.GOARCH != "arm64" || (runtime.GOOS == "darwin" || runtime.GOOS == "ios") {
+	if runtime.GOARCH != "arm64" || runtime.GOOS == "ios" {
 		return
 	}
 	if !cpu.ARM64.HasASIMD {
@@ -51,6 +52,8 @@ func TestARM64minimalFeatures(t *testing.T) {
 	if !cpu.ARM64.HasFP {
 		t.Fatal("HasFP expected true, got false")
 	}
+
+	fmt.Println("arm64 = ", cpu.ARM64)
 }
 
 func TestMIPS64Initialized(t *testing.T) {
