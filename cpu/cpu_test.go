@@ -7,11 +7,12 @@ package cpu_test
 import (
 	"runtime"
 	"testing"
-
+	"fmt"
 	"golang.org/x/sys/cpu"
 )
 
 func TestAMD64minimalFeatures(t *testing.T) {
+	fmt.Println("TestAMD64minimalFeatures, avx512 = ", cpu.X86.HasAVX512)
 	if runtime.GOARCH == "amd64" {
 		if !cpu.Initialized {
 			t.Fatal("Initialized expected true, got false")
@@ -23,6 +24,7 @@ func TestAMD64minimalFeatures(t *testing.T) {
 }
 
 func TestAVX2hasAVX(t *testing.T) {
+	fmt.Println("TestAVX2hasAVX, avx512 = ", cpu.X86.HasAVX512)
 	if runtime.GOARCH == "amd64" {
 		if cpu.X86.HasAVX2 && !cpu.X86.HasAVX {
 			t.Fatal("HasAVX expected true, got false")
@@ -31,6 +33,7 @@ func TestAVX2hasAVX(t *testing.T) {
 }
 
 func TestAVX512HasAVX2AndAVX(t *testing.T) {
+	fmt.Println("TestAVX512HasAVX2AndAVX, avx512 = ", cpu.X86.HasAVX512)
 	if runtime.GOARCH == "amd64" {
 		if cpu.X86.HasAVX512 && !cpu.X86.HasAVX {
 			t.Fatal("HasAVX expected true, got false")

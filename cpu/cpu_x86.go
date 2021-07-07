@@ -8,6 +8,7 @@
 package cpu
 
 import "runtime"
+import "fmt"
 
 const cacheLineSize = 64
 
@@ -88,6 +89,7 @@ func archInit() {
 		osSupportsAVX = isSet(1, eax) && isSet(2, eax)
 
 		if runtime.GOOS == "darwin" {
+			fmt.Println("darwinSupportsAVX512() = ", darwinSupportsAVX512())
 			// Check darwin commpage for AVX512 support. Necessary because:
 			// https://github.com/apple/darwin-xnu/blob/0a798f6738bc1db01281fc08ae024145e84df927/osfmk/i386/fpu.c#L175-L201
 			osSupportsAVX512 = osSupportsAVX && darwinSupportsAVX512()
